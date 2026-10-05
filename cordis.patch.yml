@@ -1,0 +1,5 @@
+# 个人网盘影视库统一命名（规则与解析引擎内置在插件包内，无本机路径）。
+# 需要调整默认值时再补 config；解析与计划不依赖任何配置。
+- insert:
+    - id: media-naming
+      name: dsh-plugin-media-naming

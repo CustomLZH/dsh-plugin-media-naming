@@ -1,0 +1,26 @@
+# 依赖
+node_modules/
+
+# Python 编译缓存
+__pycache__/
+*.pyc
+
+# 运行产物：包含真实扫描结果、计划、执行记录与回滚清单，绝不入库
+out/
+plans/
+apply-state.json
+rollback.json
+
+# 日志与临时文件
+*.log
+*.tmp
+
+# 备份
+*.bak
+*.bak-*
+
+# 编辑器与系统
+.idea/
+.vscode/
+.DS_Store
+Thumbs.db

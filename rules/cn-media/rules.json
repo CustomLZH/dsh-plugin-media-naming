@@ -1,0 +1,77 @@
+{
+  "id": "cn-media",
+  "title": "中文影视库命名规则",
+  "version": 1,
+  "note": "一套「规则包」：目标目录映射、清理标签、模板与口径都在这里。换一套规则只需换本文件。",
+  "rootPrefix": "影视资源",
+  "libraries": [
+    { "match": "电影", "mediaType": "movie" },
+    { "match": "电视剧", "mediaType": "tv" },
+    { "match": "动漫", "mediaType": "tv" },
+    { "match": "动画", "mediaType": "tv" },
+    { "match": "纪录片", "mediaType": "auto" }
+  ],
+  "excluded": ["示例排除目录", "示例排除合集"],
+  "seasonFolder": true,
+  "videoExtensions": [
+    ".mkv", ".mp4", ".avi", ".mov", ".wmv", ".flv",
+    ".ts", ".m2ts", ".m4v", ".rmvb", ".webm"
+  ],
+  "templates": {
+    "movie": "{根}/{库}/{片名} ({年份})/{片名} ({年份}){版本后缀}.{ext}",
+    "series": "{根}/{库}/{片名} ({年份})/Season {季:2位}/{片名} S{季:2位}E{集:2位}{版本后缀}.{ext}",
+    "multipart": "{片名} S{季:2位}E{集:2位} - Part {N}.{ext}",
+    "specialEpisode": "OVA / 花絮 / 幕后 → Season 00，用 S00EXX",
+    "documentary": "单文件按电影规则；多集按剧集规则；库仍为纪录片"
+  },
+  "policies": {
+    "core": "刮削识别区只保留「片名 + 年份 + 季集」，技术信息交给媒体服务器扫描文件后自行读取",
+    "chineseTitle": "中文作品只保留「片名 + 年份」，不追加 TMDB ID",
+    "tmdbId": "非硬要求：目录名或 NFO 已有且可靠时保留，不联网查询",
+    "versionSuffix": "仅当同片同集存在多版本时保留，格式 ` - 2160p`；单版本一律删除",
+    "defaultSeason": "未标注季时默认 Season 01",
+    "brackets": "全角括号归一化为半角；年份为 4 位数字加半角括号",
+    "theatrical": "剧场版建议移入电影库——只给建议，不擅自跨库移动",
+    "attachments": "首版只处理视频文件，字幕 / NFO / 海报不动",
+    "readonly": "只读工具不写数据；唯一的写操作由 media_naming_apply 在用户确认（confirm=true）后执行，计划不干净或缺少确认都会被拒绝",
+    "scope": "处理范围**完全由使用者指定的路径决定**——整库、一个节目目录、甚至只有一个视频的目录都可以，插件不预设也不限制；只处理该路径下的视频文件与该路径自身的目录名，绝不擅自扩大到未指定的目录"
+  },
+  "statuses": {
+    "CHANGED": "目标名与原名不同，进入计划交给使用者确认",
+    "SKIP": "已符合规范，跳过且不计入变更",
+    "CONFLICT": "目标名已被占用，绝不自动覆盖",
+    "UNKNOWN": "解析不出片名或年份，保留原名并给出原因",
+    "OUT_OF_SCOPE": "被排除的目录或非视频文件，不处理"
+  },
+  "cleanup": {
+    "sourceCodec": [
+      "web-dl", "webrip", "webnetflix", "amzn", "nf",
+      "bluray", "bdrip", "bdremux", "remux",
+      "h265", "h264", "x265", "x264", "hevc", "avc", "av1", "hq",
+      "docu", "sdr", "hlg", "xvid", "divx", "repack", "proper",
+      "ma", "8bit", "10bit", "12bit"
+    ],
+    "version": [
+      "2160p", "1080p", "720p", "480p", "4k", "8k",
+      "dolby", "vision", "dv", "hdr10+", "hdr10", "hdr",
+      "60fps", "120fps",
+      "dts-hd", "dts5.1", "dts", "truehd", "atmos", "ddp5.1", "ac3", "aac"
+    ],
+    "chinese": [
+      "国语配音", "国语音轨", "普通话配音", "粤语配音",
+      "中文字幕", "简繁英字幕", "双语字幕", "繁体中文", "简体中文",
+      "英文内封", "英文内嵌", "内嵌字幕", "外挂字幕",
+      "60帧率版本", "杜比视界版本", "高码版", "修复版",
+      "导演剪辑版", "加长版", "无水印版", "无水印", "水印",
+      "花絮", "精选集", "珍藏版", "合集篇",
+      "国配", "国语", "普通话", "粤语", "中字", "中文",
+      "内封", "内嵌", "外挂", "简体", "繁体", "简繁",
+      "纪录片", "记录片", "动画片", "动画版", "原盘",
+      "豆瓣评分", "豆瓣", "评分", "中文字幕组", "字幕组"
+    ],
+    "bracketNoise": [
+      "国产", "国漫", "日漫", "美漫", "中影", "华语",
+      "制作组", "压制", "字幕组", "无水印"
+    ]
+  }
+}

@@ -1,0 +1,6 @@
+{
+  "version": 1,
+  "default": "cn-media",
+  "packs": ["cn-media"],
+  "note": "规则包注册表。要新增/替换一套规则：在 rules/ 下建 <id>/ 目录，放 rules.json 与 examples.json，再把 id 加进 packs。目标目录、内容类型映射、清理标签都属于规则包，不属于代码。"
+}

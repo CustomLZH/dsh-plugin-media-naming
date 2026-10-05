@@ -1,0 +1,124 @@
+{
+  "version": 1,
+  "title": "媒体库命名作业流程",
+  "goal": "把目标目录下的文件规范到规则包定义的目标形态；不覆盖任何已有文件，不跨库移动。",
+  "principle": "插件只读、只给方法与校验；写操作由 Agent 或用户在明确确认后发起。",
+  "inputs": [
+    { "name": "cookiesPath", "required": true, "desc": "登录凭据文件路径（纯文本 Cookie 字符串）；仅扫描前需要" },
+    { "name": "target", "required": true, "desc": "要处理的目录或作品，相对根、可多层，如 `动漫/示例动漫 (2018)`" },
+    { "name": "root", "required": false, "desc": "根目录名，默认取规则包的 rootPrefix" },
+    { "name": "pack", "required": false, "desc": "规则包 id；默认用注册表里的默认包" }
+  ],
+  "steps": [
+    {
+      "id": "quick",
+      "title": "一键：扫描 + 计算 + 出审核清单（首选入口）",
+      "tool": "media_naming_quick",
+      "args": { "target": "<使用者指定的路径，任意层级>" },
+      "writes": false,
+      "requires": [
+        "使用者指定了要处理的路径（整库、一个节目目录、只有一个视频的目录都可以）",
+        "只动这个路径：不擅自扩大到未指定的其它目录；使用者没说清时先问，不要自己挑一个",
+        "凭据已就绪（首次用 python/login_115.py 扫码登录；工具自动读配置，不必每次传）"
+      ],
+      "pass": [
+        { "id": "quick.scanned", "desc": "summary.total > 0（确实扫到了文件）" },
+        { "id": "quick.clean", "desc": "summary.conflict === 0 且 summary.unknown === 0" },
+        { "id": "quick.reviewed", "desc": "已把返回的审核清单展示给使用者，并等待其明确同意" }
+      ],
+      "fail": "清单里有冲突 / 未知就先解决；扫到 0 个文件说明目标目录选错了。"
+    },
+    {
+      "id": "prepare",
+      "title": "确认前置条件",
+      "tool": "media_naming_check",
+      "args": { "step": "prepare" },
+      "writes": false,
+      "pass": [
+        { "id": "cookies.provided", "desc": "已提供 cookiesPath" },
+        { "id": "cookies.exists", "desc": "凭据文件存在" },
+        { "id": "cookies.nonEmpty", "desc": "凭据文件非空" },
+        { "id": "cookies.fields", "desc": "凭据含关键字段（UID / CID / SEID / KID 至少一个）" },
+        { "id": "target.reachable", "desc": "目标目录可列出（需要网盘访问）" }
+      ],
+      "fail": "停下，让用户核对 cookiesPath 与 target；不要进入下一步。若凭据文件不存在或为空，让用户重新获取凭据。"
+    },
+    {
+      "id": "scan",
+      "title": "只读扫描使用者指定的那一个节目目录",
+      "tool": "media_naming_scan",
+      "args": { "path": "<使用者指定的节目目录>" },
+      "writes": false,
+      "requires": [
+        "使用者明确指定了要处理的节目目录（如 `电影/示例电影 (2024)`）",
+        "只扫这一个目录：不扩大到整库、不扫其它作品；使用者没说目录时先问，不要自行挑一个"
+      ],
+      "pass": [
+        { "id": "scan.notTruncated", "desc": "truncated === false（结果未被 limit 截断）" },
+        { "id": "scan.hasFiles", "desc": "files.length > 0" },
+        { "id": "scan.reportLimit", "desc": "已把 limit 与实际条目数报告给用户，便于判断是否需要分批" }
+      ],
+      "fail": "被截断就缩小 path 或提高 limit 后重扫；files 为空说明选错了目标目录。"
+    },
+    {
+      "id": "plan",
+      "title": "生成命名计划（dry-run）",
+      "tool": "media_naming_plan",
+      "args": { "target": "<target>", "outputPath": "<可选：计划落盘路径>" },
+      "writes": false,
+      "pass": [
+        { "id": "plan.total", "desc": "summary.total > 0（确实扫到了文件）" },
+        { "id": "plan.conflict", "desc": "summary.conflict === 0（没有目标名冲突）" },
+        { "id": "plan.unknown", "desc": "summary.unknown === 0（没有解析不出的条目）" },
+        { "id": "plan.uniqueTargets", "desc": "同批 proposedPath 无重复（不会互相覆盖）" }
+      ],
+      "fail": "存在 conflict 或 unknown 时，逐条列出交用户决策；不得凭猜测继续。可用 media_naming_check 的 step=plan 自动判定。"
+    },
+    {
+      "id": "review",
+      "title": "对照样例复核计划",
+      "tool": "media_naming_verify",
+      "args": { "candidatePath": "<计划中的 proposedPath>" },
+      "writes": false,
+      "pass": [
+        { "id": "review.verifyAll", "desc": "所有 CHANGED 条目的 proposedPath 都通过 verify" },
+        { "id": "review.sampleMatch", "desc": "抽查与 examples 的口径一致（正例 P1–P3、边界 E1–E3）" },
+        { "id": "review.userAck", "desc": "已把变更摘要交给用户确认" }
+      ],
+      "fail": "口径不一致时调整规则包（rules/<pack>/rules.json）后从 plan 重来，不要绕过校验直接执行。"
+    },
+    {
+      "id": "apply",
+      "title": "执行改名 / 移动（用户确认后由 Agent 执行）",
+      "tool": "media_naming_apply",
+      "method": "python/apply_115.py",
+      "writes": true,
+      "owner": "agent",
+      "requires": [
+        "已把审核清单交给用户，并得到用户明确同意",
+        "计划里没有 conflict / unknown 条目",
+        "凭据可用（过期则先扫码登录）"
+      ],
+      "pass": [
+        { "id": "apply.ok", "desc": "返回 ok === true" },
+        { "id": "apply.executed", "desc": "executed === 计划里的变更条数" },
+        { "id": "apply.noFailed", "desc": "failed 列表为空" },
+        { "id": "apply.rollbackList", "desc": "已生成回滚清单，需要时可传 rollback=true 改回" }
+      ],
+      "fail": "任一条失败即停止，用 state 断点续跑；先查凭据是否失效、是否触发限流。要撤销就对本步传 rollback=true。",
+      "note": "本步由 Agent 执行，但必须经过两道闸门：计划校验通过 + 用户明确同意（confirm=true）。缺任何一道都会被拒绝。"
+    },
+    {
+      "id": "recheck",
+      "title": "复验",
+      "tool": "media_naming_plan",
+      "args": { "target": "<target>" },
+      "writes": false,
+      "pass": [
+        { "id": "recheck.allSkipped", "desc": "全部条目 status === SKIP（已达到目标形态）" },
+        { "id": "recheck.noLoss", "desc": "文件总数与执行前一致（没有丢文件）" }
+      ],
+      "fail": "仍有 CHANGED → 回到 plan 重新核对；总数减少 → 立即用回滚清单排查。"
+    }
+  ]
+}

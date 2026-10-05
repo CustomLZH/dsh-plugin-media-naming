@@ -1,0 +1,46 @@
+{
+  "name": "dsh-plugin-media-naming",
+  "version": "0.1.0",
+  "description": "DSH 影视库统一命名插件：内置命名规则、样例与审核清单，支持 115 网盘与本机/NAS/Linux 文件系统，先出计划再执行、可断点续跑与回滚",
+  "type": "module",
+  "main": "index.js",
+  "license": "MIT",
+  "keywords": [
+    "dsh",
+    "dsh-plugin",
+    "media",
+    "rename",
+    "naming",
+    "jellyfin",
+    "emby",
+    "115",
+    "nas"
+  ],
+  "engines": {
+    "node": ">=18"
+  },
+  "scripts": {
+    "test": "node scripts/run-tests.mjs"
+  },
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/CustomLZH/dsh-plugin-media-naming.git"
+  },
+  "files": [
+    "index.js",
+    "lib/**/*.js",
+    "rules/**/*.json",
+    "python/**/*.py",
+    "scripts/**/*.mjs",
+    "flow.json",
+    "cordis.patch.yml",
+    "README.md",
+    "LICENSE",
+    "CHANGELOG.md"
+  ],
+  "dsh": {
+    "bundle": {
+      "patch": "./cordis.patch.yml"
+    }
+  }
+}
